@@ -160,7 +160,7 @@ let historyPlugin = (options = {}) => {
                   collectionName: getModelName(this.constructor.modelName),
                   collectionId: this._id
                 })
-                  .sort('-version')
+                  .sort('-' + pluginOptions.timestampFieldName)
                   .select({ version: 1 })
                   .then((lastHistory) => {
                     let obj = {};
