@@ -120,6 +120,9 @@ let historyPlugin = (options = {}) => {
             getPrevious = this.getVersions().then(versions => {
               if (versions[0]) return versions[0].object;
               else return {};
+            }).catch(err => {
+              //could not get the previous version, default to empty object
+              return {};
             });
           } else {
             getPrevious = this.constructor.findById(this._id);
