@@ -118,7 +118,7 @@ let historyPlugin = (options = {}) => {
             // because the new version would have been saved already by the parent,
             // get the older version from the history collection
             getPrevious = this.getVersions().then(versions => {
-              if (versions[0]) return versions[0].object;
+              if (versions.length) return versions[versions.length - 1].object;
               else return {};
             }).catch(err => {
               //could not get the previous version, default to empty object
@@ -232,8 +232,7 @@ let historyPlugin = (options = {}) => {
         collectionId: this._id
       });
 
-      options.sort = options.sort || '-version';
-
+      options.sort = options.sort || '-' + pluginOptions.timestampFieldName;
       return query('find', options);
     };
 
@@ -246,16 +245,14 @@ let historyPlugin = (options = {}) => {
         version: version
       });
 
-      options.sort = options.sort || '-version';
+      options.sort = options.sort || '-' + pluginOptions.timestampFieldName;
 
       return query('findOne', options);
     };
 
     // versions.get
     schema.methods.getVersion = function (version2get, includeObject = true) {
-      return this.getDiffs({
-        sort: 'version'
-      }).then((histories) => {
+      return this.getDiffs().then((histories) => {
         let lastVersion = histories[histories.length - 1],
           firstVersion = histories[0],
           history,
@@ -310,7 +307,8 @@ let historyPlugin = (options = {}) => {
 
     // versions.find
     schema.methods.getVersions = function (options = {}, includeObject = true) {
-      options.sort = options.sort || 'version';
+      // do this in order of timestamp, older first
+      options.sort = options.sort || pluginOptions.timestampFieldName;
 
       return this.getDiffs(options).then((histories) => {
         if (!includeObject) {
