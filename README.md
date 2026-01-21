@@ -120,19 +120,21 @@ small
     small.compareVersions('0.0.0', '1.0.0').then(console.log);
   });
 
-// To delete and save history, set __history before calling deleteOne()
-small.__history = {
-  event: 'removed',
-  user: undefined,
-  reason: undefined,
-  data: undefined,
-  type: undefined,
-  method: 'delete'
-};
-
 small
   .deleteOne()
-  .then(() => {
+  .then((small) => {
+    small.__history = {
+      event: 'removed',
+      user: undefined,
+      reason: undefined,
+      data: undefined,
+      type: undefined,
+      method: 'delete'
+    };
+
+    return small.deleteOne();
+  })
+  .then((small) => {
     // All options are optional
     let options = {
       find: {}, // Must be an object
