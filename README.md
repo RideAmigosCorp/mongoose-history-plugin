@@ -24,9 +24,7 @@ Mongoose plugin that saves documents history in [JsonPatch](http://jsonpatch.com
 
 This is a [Node.js](https://nodejs.org/en/) module available through the [npm registry](https://www.npmjs.com/). Installation is done using the [`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
 
-If using mongoose 4.x.x remove will only save if calling model.remove.
-Mongoose 5.x now applies middleware hooks for remove on both schema and model.
-
+**Note:** As of Mongoose 7+, the `remove()` method has been removed. Use `deleteOne()` instead.
 See <https://mongoosejs.com/docs/middleware.html>
 
 ```bash
@@ -122,21 +120,19 @@ small
     small.compareVersions('0.0.0', '1.0.0').then(console.log);
   });
 
-small
-  .remove()
-  .then((small) => {
-    small.__history = {
-      event: 'removed',
-      user: undefined,
-      reason: undefined,
-      data: undefined,
-      type: undefined,
-      method: 'delete'
-    };
+// To delete and save history, set __history before calling deleteOne()
+small.__history = {
+  event: 'removed',
+  user: undefined,
+  reason: undefined,
+  data: undefined,
+  type: undefined,
+  method: 'delete'
+};
 
-    return small.remove();
-  })
-  .then((small) => {
+small
+  .deleteOne()
+  .then(() => {
     // All options are optional
     let options = {
       find: {}, // Must be an object

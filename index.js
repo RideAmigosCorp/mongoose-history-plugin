@@ -222,7 +222,7 @@ let historyPlugin = (options = {}) => {
 
     schema.pre('save', preSave(false));
 
-    schema.pre('remove', preSave(true));
+    schema.pre('deleteOne', { document: true, query: false }, preSave(true));
 
     // diff.find
     schema.methods.getDiffs = function (options = {}) {
@@ -252,9 +252,10 @@ let historyPlugin = (options = {}) => {
 
     // versions.get
     schema.methods.getVersion = function (version2get, includeObject = true) {
-      return this.getDiffs().then((histories) => {
-        let lastVersion = histories[histories.length - 1],
-          firstVersion = histories[0],
+      // Sort by timestamp ascending (oldest first) to apply patches in correct order
+      return this.getDiffs({ sort: pluginOptions.timestampFieldName }).then((histories) => {
+        let firstVersion = histories[0],
+          lastVersion = histories[histories.length - 1],
           history,
           version = {};
 
@@ -276,6 +277,7 @@ let historyPlugin = (options = {}) => {
           return history;
         }
 
+        // Apply patches in chronological order (oldest first)
         histories.map((item) => {
           if (
             semver.lt(item.version, version2get) ||
