@@ -5,25 +5,20 @@ let getRandomName = () => (0 | (Math.random() * 9e6)).toString(36);
 module.exports = (mongoose) => {
   let dbname = getRandomName();
   let connectionString = `mongodb://localhost:27017/${dbname}`;
-  let connectionOptions = { useNewUrlParser: true };
-  let db;
 
   return {
     dbname,
     MongooseHistoryPlugin,
     connectionString,
-    connectionOptions,
     getRandomName,
     async start({ log }) {
-      await mongoose.connect(connectionString, connectionOptions, function (error) {
-        if (error) {
-          throw error;
-        }
-        log(`Mongoose listening on port 27017 to database "${dbname}"`);
-      });
+      await mongoose.connect(connectionString);
+      log(`Mongoose listening on port 27017 to database "${dbname}"`);
     },
     async close() {
-      await mongoose.connection.db.dropDatabase();
+      if (mongoose.connection.db) {
+        await mongoose.connection.db.dropDatabase();
+      }
       await mongoose.connection.close();
     },
     async dropCollection(name) {

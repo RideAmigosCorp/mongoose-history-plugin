@@ -24,9 +24,7 @@ Mongoose plugin that saves documents history in [JsonPatch](http://jsonpatch.com
 
 This is a [Node.js](https://nodejs.org/en/) module available through the [npm registry](https://www.npmjs.com/). Installation is done using the [`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
 
-If using mongoose 4.x.x remove will only save if calling model.remove.
-Mongoose 5.x now applies middleware hooks for remove on both schema and model.
-
+**Note:** As of Mongoose 7+, the `remove()` method has been removed. Use `deleteOne()` instead.
 See <https://mongoosejs.com/docs/middleware.html>
 
 ```bash
@@ -123,7 +121,7 @@ small
   });
 
 small
-  .remove()
+  .deleteOne()
   .then((small) => {
     small.__history = {
       event: 'removed',
@@ -134,7 +132,7 @@ small
       method: 'delete'
     };
 
-    return small.remove();
+    return small.deleteOne();
   })
   .then((small) => {
     // All options are optional
