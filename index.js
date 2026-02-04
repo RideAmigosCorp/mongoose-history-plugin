@@ -1,5 +1,5 @@
-let JsonDiffPatch = require('jsondiffpatch'),
-  semver = require('semver');
+import JsonDiffPatch from 'jsondiffpatch';
+import semver from 'semver';
 
 let historyPlugin = (options = {}) => {
   let pluginOptions = {
@@ -55,6 +55,19 @@ let historyPlugin = (options = {}) => {
   Schema.set('minimize', false);
   Schema.set('versionKey', false);
   Schema.set('strict', true);
+
+  // Add indexes for efficient querying
+  Schema.index({
+    collectionName: 1,
+    collectionId: 1,
+    [pluginOptions.timestampFieldName]: -1
+  });
+
+  Schema.index({
+    collectionName: 1,
+    collectionId: 1,
+    version: 1
+  });
 
   Schema.pre('save', function (next) {
     this[pluginOptions.timestampFieldName] = new Date();
@@ -330,4 +343,4 @@ let historyPlugin = (options = {}) => {
   };
 };
 
-module.exports = historyPlugin;
+export default historyPlugin;

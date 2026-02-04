@@ -1,10 +1,10 @@
-let MongooseHistoryPlugin = require('../../index');
+import MongooseHistoryPlugin from '../../index.js';
 
-let getRandomName = () => (0 | (Math.random() * 9e6)).toString(36);
+const getRandomName = () => (0 | (Math.random() * 9e6)).toString(36);
 
-module.exports = (mongoose) => {
-  let dbname = getRandomName();
-  let connectionString = `mongodb://localhost:27017/${dbname}`;
+export default (mongoose) => {
+  const dbname = getRandomName();
+  const connectionString = `mongodb://localhost:27017/${dbname}`;
 
   return {
     dbname,
@@ -31,9 +31,9 @@ module.exports = (mongoose) => {
       }
     },
     async dropCollections() {
-      let collections = Object.keys(mongoose.connection.collections);
+      const collections = Object.keys(mongoose.connection.collections);
 
-      for (let name of collections) {
+      for (const name of collections) {
         try {
           await mongoose.connection.collections[name].drop();
         } catch (error) {
