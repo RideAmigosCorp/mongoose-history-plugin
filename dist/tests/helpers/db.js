@@ -1,0 +1,48 @@
+import MongooseHistoryPlugin from '../../index.js';
+const getRandomName = () => (0 | (Math.random() * 9e6)).toString(36);
+export default (mongoose) => {
+    const dbname = getRandomName();
+    const connectionString = `mongodb://localhost:27017/${dbname}`;
+    return {
+        dbname,
+        MongooseHistoryPlugin,
+        connectionString,
+        getRandomName,
+        async start({ log }) {
+            await mongoose.connect(connectionString);
+            log(`Mongoose listening on port 27017 to database "${dbname}"`);
+        },
+        async close() {
+            if (mongoose.connection.db) {
+                await mongoose.connection.db.dropDatabase();
+            }
+            await mongoose.connection.close();
+        },
+        async dropCollection(name) {
+            try {
+                if (mongoose.connection.db) {
+                    await mongoose.connection.db.dropCollection(name);
+                }
+            }
+            catch (error) {
+                if (error instanceof Error && error.message !== 'ns not found') {
+                    throw error;
+                }
+            }
+        },
+        async dropCollections() {
+            const collections = Object.keys(mongoose.connection.collections);
+            for (const name of collections) {
+                try {
+                    await mongoose.connection.collections[name].drop();
+                }
+                catch (error) {
+                    if (error instanceof Error && error.message !== 'ns not found') {
+                        throw error;
+                    }
+                }
+            }
+        }
+    };
+};
+//# sourceMappingURL=db.js.map
