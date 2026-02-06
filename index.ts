@@ -212,10 +212,9 @@ const historyPlugin = (options: PartialPluginOptions) => {
 
           getPrevious
             .then((previous) => {
-              const currentObject = JSON.parse(JSON.stringify(this)) as Record<string, unknown>;
-              const previousObject: Record<string, unknown> = previous
-                ? JSON.parse(JSON.stringify(previous))
-                : {};
+              // Use toObject to exclude virtuals from the diff
+              const currentObject = (this as any).toObject({ virtuals: false }) as Record<string, unknown>;
+              const previousObject: Record<string, unknown> = previous || {};
 
               delete currentObject.__history;
               delete previousObject.__history;

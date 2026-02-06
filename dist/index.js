@@ -122,10 +122,9 @@ const historyPlugin = (options) => {
                     }
                     getPrevious
                         .then((previous) => {
-                        const currentObject = JSON.parse(JSON.stringify(this));
-                        const previousObject = previous
-                            ? JSON.parse(JSON.stringify(previous))
-                            : {};
+                        // Use toObject to exclude virtuals from the diff
+                        const currentObject = this.toObject({ virtuals: false });
+                        const previousObject = previous || {};
                         delete currentObject.__history;
                         delete previousObject.__history;
                         delete currentObject.__v;
@@ -221,6 +220,9 @@ const historyPlugin = (options) => {
         };
         schema.methods.getVersion = function (version2get, includeObject = true) {
             return this.getDiffs({ sort: pluginOptions.timestampFieldName }).then((histories) => {
+                if (histories.length === 0) {
+                    return Promise.reject(new Error('No history found for this document'));
+                }
                 const firstVersion = histories[0];
                 const lastVersion = histories[histories.length - 1];
                 let history;
