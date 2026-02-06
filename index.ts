@@ -337,6 +337,10 @@ const historyPlugin = (options: PartialPluginOptions) => {
 
     schema.methods.getVersion = function (this: HistoryEnabledDocument, version2get: string, includeObject = true): Promise<VersionResult> {
       return this.getDiffs({ sort: pluginOptions.timestampFieldName }).then((histories) => {
+        if (histories.length === 0) {
+          return Promise.reject(new Error('No history found for this document'));
+        }
+
         const firstVersion = histories[0];
         const lastVersion = histories[histories.length - 1];
         let history: VersionResult | undefined;
