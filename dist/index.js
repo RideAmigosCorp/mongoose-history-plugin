@@ -1,4 +1,4 @@
-import * as jsondiffpatch from 'jsondiffpatch';
+import * as jsondiffpatch from 'jsondiffpatch/with-text-diffs';
 import * as semver from 'semver';
 const historyPlugin = (options) => {
     const pluginOptions = {

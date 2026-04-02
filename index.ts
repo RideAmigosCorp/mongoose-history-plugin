@@ -1,4 +1,4 @@
-import * as jsondiffpatch from 'jsondiffpatch';
+import * as jsondiffpatch from 'jsondiffpatch/with-text-diffs';
 import * as semver from 'semver';
 import { Mongoose, Schema as MongooseSchema, Model, Document, Query } from 'mongoose';
 
