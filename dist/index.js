@@ -132,10 +132,9 @@ const historyPlugin = (options) => {
                     }
                     return getPrevious
                         .then((previous) => {
-                        // Use toObject to exclude virtuals from the diff. flattenObjectIds
-                        // renders ObjectIds as hex strings (not bson Buffers) so the diff
-                        // matches the lean previous image and stays human-readable —
-                        // required since Mongoose 9's bson clones ObjectIds as Buffers.
+                        // Exclude virtuals from the diff; flattenObjectIds renders
+                        // ObjectIds as hex strings so the diff stays human-readable and
+                        // matches the previous image (see the previous-image fetch above).
                         const currentObject = this.toObject({
                             virtuals: false,
                             flattenObjectIds: true,
