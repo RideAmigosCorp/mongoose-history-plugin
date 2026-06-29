@@ -206,10 +206,11 @@ const historyPlugin = (options: PartialPluginOptions) => {
             });
           } else {
             const Constructor = this.constructor as Model<HistoryEnabledDocument>;
-            // Hydrate + toObject (rather than lean) so the previous image
-            // flattens ObjectIds to hex strings the same way currentObject does;
-            // otherwise Mongoose 9's bson clones ObjectIds as Buffers and every
-            // unchanged ObjectId field shows up as a spurious diff.
+            // Snapshot the raw persisted shape for the diff: hydrate + toObject
+            // (not lean) with transform:false so a schema's toObject transform
+            // can't reshape history, and flattenObjectIds so ObjectIds stay hex
+            // strings — Mongoose 9's bson otherwise clones them as Buffers, and
+            // every unchanged ObjectId field then shows up as a spurious diff.
             getPrevious = Constructor.findById(this._id)
               .exec()
               .then((doc) =>
@@ -217,6 +218,7 @@ const historyPlugin = (options: PartialPluginOptions) => {
                   ? ((doc as any).toObject({
                       virtuals: false,
                       flattenObjectIds: true,
+                      transform: false,
                     }) as Record<string, unknown>)
                   : null,
               );
@@ -224,12 +226,12 @@ const historyPlugin = (options: PartialPluginOptions) => {
 
           return getPrevious
             .then((previous) => {
-              // Exclude virtuals from the diff; flattenObjectIds renders
-              // ObjectIds as hex strings so the diff stays human-readable and
-              // matches the previous image (see the previous-image fetch above).
+              // Same raw-snapshot options as the previous image above
+              // (virtuals + transform off, ObjectIds flattened to hex strings).
               const currentObject = (this as any).toObject({
                 virtuals: false,
                 flattenObjectIds: true,
+                transform: false,
               }) as Record<string, unknown>;
               const previousObject: Record<string, unknown> = previous || {};
 
