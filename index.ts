@@ -131,9 +131,8 @@ const historyPlugin = (options: PartialPluginOptions) => {
     version: 1
   });
 
-  Schema.pre('save', function (next) {
+  Schema.pre('save', function () {
     (this as unknown as Record<string, unknown>)[pluginOptions.timestampFieldName] = new Date();
-    next();
   });
 
   const HistoryModel: Model<HistoryDocument> = mongoose.model<HistoryDocument>(pluginOptions.modelName, Schema);
@@ -195,7 +194,7 @@ const historyPlugin = (options: PartialPluginOptions) => {
     });
 
     const preSave = function (forceSave: boolean) {
-      return function (this: HistoryEnabledDocument, next: (err?: Error) => void): void {
+      return function (this: HistoryEnabledDocument): Promise<unknown> | void {
         if (this.__history !== undefined || pluginOptions.noEventSave) {
           let getPrevious: Promise<Record<string, unknown> | null>;
           if (pluginOptions.embeddedDocument) {
@@ -207,13 +206,32 @@ const historyPlugin = (options: PartialPluginOptions) => {
             });
           } else {
             const Constructor = this.constructor as Model<HistoryEnabledDocument>;
-            getPrevious = Constructor.findById(this._id).lean().exec() as Promise<Record<string, unknown> | null>;
+            // Hydrate + toObject (rather than lean) so the previous image
+            // flattens ObjectIds to hex strings the same way currentObject does;
+            // otherwise Mongoose 9's bson clones ObjectIds as Buffers and every
+            // unchanged ObjectId field shows up as a spurious diff.
+            getPrevious = Constructor.findById(this._id)
+              .exec()
+              .then((doc) =>
+                doc
+                  ? ((doc as any).toObject({
+                      virtuals: false,
+                      flattenObjectIds: true,
+                    }) as Record<string, unknown>)
+                  : null,
+              );
           }
 
-          getPrevious
+          return getPrevious
             .then((previous) => {
-              // Use toObject to exclude virtuals from the diff
-              const currentObject = (this as any).toObject({ virtuals: false }) as Record<string, unknown>;
+              // Use toObject to exclude virtuals from the diff. flattenObjectIds
+              // renders ObjectIds as hex strings (not bson Buffers) so the diff
+              // matches the lean previous image and stays human-readable —
+              // required since Mongoose 9's bson clones ObjectIds as Buffers.
+              const currentObject = (this as any).toObject({
+                virtuals: false,
+                flattenObjectIds: true,
+              }) as Record<string, unknown>;
               const previousObject: Record<string, unknown> = previous || {};
 
               delete currentObject.__history;
@@ -294,13 +312,8 @@ const historyPlugin = (options: PartialPluginOptions) => {
                   });
               }
               return undefined;
-            })
-            .then(() => next())
-            .catch(next);
-          return;
+            });
         }
-
-        next();
       };
     };
 
