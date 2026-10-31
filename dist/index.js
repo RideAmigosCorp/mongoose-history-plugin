@@ -52,9 +52,8 @@ const historyPlugin = (options) => {
         collectionId: 1,
         version: 1
     });
-    Schema.pre('save', function (next) {
+    Schema.pre('save', function () {
         this[pluginOptions.timestampFieldName] = new Date();
-        next();
     });
     const HistoryModel = mongoose.model(pluginOptions.modelName, Schema);
     const getModelName = (defaultName) => {
@@ -103,7 +102,7 @@ const historyPlugin = (options) => {
             __history: { type: mongoose.Schema.Types.Mixed }
         });
         const preSave = function (forceSave) {
-            return function (next) {
+            return function () {
                 if (this.__history !== undefined || pluginOptions.noEventSave) {
                     let getPrevious;
                     if (pluginOptions.embeddedDocument) {
@@ -118,12 +117,30 @@ const historyPlugin = (options) => {
                     }
                     else {
                         const Constructor = this.constructor;
-                        getPrevious = Constructor.findById(this._id).lean().exec();
+                        // Snapshot the raw persisted shape for the diff: hydrate + toObject
+                        // (not lean) with transform:false so a schema's toObject transform
+                        // can't reshape history, and flattenObjectIds so ObjectIds stay hex
+                        // strings — Mongoose 9's bson otherwise clones them as Buffers, and
+                        // every unchanged ObjectId field then shows up as a spurious diff.
+                        getPrevious = Constructor.findById(this._id)
+                            .exec()
+                            .then((doc) => doc
+                            ? doc.toObject({
+                                virtuals: false,
+                                flattenObjectIds: true,
+                                transform: false,
+                            })
+                            : null);
                     }
-                    getPrevious
+                    return getPrevious
                         .then((previous) => {
-                        // Use toObject to exclude virtuals from the diff
-                        const currentObject = this.toObject({ virtuals: false });
+                        // Same raw-snapshot options as the previous image above
+                        // (virtuals + transform off, ObjectIds flattened to hex strings).
+                        const currentObject = this.toObject({
+                            virtuals: false,
+                            flattenObjectIds: true,
+                            transform: false,
+                        });
                         const previousObject = previous || {};
                         delete currentObject.__history;
                         delete previousObject.__history;
@@ -187,12 +204,8 @@ const historyPlugin = (options) => {
                             });
                         }
                         return undefined;
-                    })
-                        .then(() => next())
-                        .catch(next);
-                    return;
+                    });
                 }
-                next();
             };
         };
         schema.pre('save', preSave(false));
